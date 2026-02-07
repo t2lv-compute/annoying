@@ -1,0 +1,2 @@
+# John's Idea
+annoying thing where if you close the window, it opens again. There is NO password. The only things on the screen are the title of the screen called "Try to Close Me" and a button that says "Press me to close the tab. When you press the button, Another tab appears exactly the same as the first one
