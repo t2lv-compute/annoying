@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Annoying App Web Edition</title>
+    <style>
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #008080; overflow: hidden; font-family: 'Courier New', Courier, monospace;
+        }
+        .window {
+            position: absolute; width: 320px; min-height: 120px;
+            background: #c0c0c0; border: 2px solid #fff;
+            border-right: 2px solid #000; border-bottom: 2px solid #000;
+            display: flex; flex-direction: column; z-index: 10;
+        }
+        .title-bar {
+            background: darkblue; color: white; padding: 3px;
+            font-size: 12px; display: flex; justify-content: space-between;
+        }
+        .btn-main {
+            flex: 1; border: 2px solid; cursor: pointer; font-weight: bold;
+        }
+        .dup-btn { font-size: 18px; background: #eee; }
+        .savior-btn { font-size: 18px; background: red; color: white; text-decoration: underline; }
+        
+        /* Grid Styles */
+        .grid-container {
+            display: grid; grid-template-columns: repeat(10, 22px);
+            gap: 1px; padding: 5px; justify-content: center;
+        }
+        .grid-pixel {
+            width: 20px; height: 20px; background: #ddd; border: 1px solid #777;
+        }
+        .grid-pixel.disabled { background: red; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<script>
+    let windowCount = 0;
+
+    function spawnWindow() {
+        windowCount++;
+        const win = document.createElement('div');
+        win.className = 'window';
+        
+        // Initial state
+        let state = { locked: false };
+        let dx = Math.random() < 0.5 ? 2 : -2;
+        let dy = Math.random() < 0.5 ? 2 : -2;
+        let x = Math.random() * (window.innerWidth - 320);
+        let y = Math.random() * (window.innerHeight - 150);
+
+        win.innerHTML = `
+            <div class="title-bar"><span>Try to close me!</span><span>X</span></div>
+            <button class="btn-main dup-btn">Duplicate Window</button>
+            <button class="btn-main savior-btn">Danger: Do Not Press</button>
+        `;
+
+        document.body.appendChild(win);
+
+        const move = () => {
+            if (!state.locked) {
+                x += dx; y += dy;
+                // Bounce logic
+                if (x + win.offsetWidth >= window.innerWidth || x <= 0) dx *= -1;
+                if (y + win.offsetHeight >= window.innerHeight || y <= 0) dy *= -1;
+                win.style.left = x + 'px';
+                win.style.top = y + 'px';
+            }
+            requestAnimationFrame(move);
+        };
+        requestAnimationFrame(move);
+
+        // --- BUTTON LOGIC ---
+
+        // 1. Duplicate Window
+        win.querySelector('.dup-btn').onclick = () => spawnWindow();
+
+        // 2. The "Savior" 10x10 Grid
+        win.querySelector('.savior-btn').onclick = function() {
+            state.locked = true;
+            this.remove(); 
+            win.querySelector('.dup-btn').remove();
+            
+            const grid = document.createElement('div');
+            grid.className = 'grid-container';
+            let remaining = 100;
+
+            for (let i = 0; i < 100; i++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'grid-pixel';
+                pixel.onclick = () => {
+                    if (!pixel.classList.contains('disabled')) {
+                        pixel.classList.add('disabled');
+                        remaining--;
+                        if (remaining <= 0) win.remove();
+                    }
+                };
+                grid.appendChild(pixel);
+            }
+            win.appendChild(grid);
+            
+            // Resume movement after 1 second (per your Python code)
+            setTimeout(() => { state.locked = false; }, 1000);
+        };
+
+        // 3. The "Close" duplication (Protocol WM_DELETE_WINDOW)
+        win.querySelector('.title-bar').lastElementChild.onclick = () => {
+            win.remove();
+            spawnWindow();
+            spawnWindow(); // Double the trouble!
+        };
+    }
+
+    // Initialize
+    spawnWindow();
+
+    // Shift + Escape to Clear All
+    window.addEventListener('keydown', (e) => {
+        if (e.shiftKey && e.key === 'Escape') {
+            document.querySelectorAll('.window').forEach(w => w.remove());
+        }
+    });
+</script>
+</body>
+</html>
