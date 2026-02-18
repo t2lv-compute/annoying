@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Annoying App - Tight Layout</title>
+    <style>
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            background: #008080; overflow: hidden; font-family: 'Tahoma', sans-serif;
+        }
+        /* The Window Container */
+        .window {
+            position: absolute; width: 250px; 
+            background: #c0c0c0; border: 2px solid #fff;
+            border-right: 2px solid #444; border-bottom: 2px solid #444;
+            display: flex; flex-direction: column; z-index: 10;
+            user-select: none;
+        }
+        /* Tight Title Bar */
+        .title-bar {
+            background: linear-gradient(90deg, navy, #1084d0); color: white; 
+            padding: 2px 5px; font-size: 11px; font-weight: bold;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+        .close-x {
+            background: #c0c0c0; color: black; border: 1px solid black;
+            width: 14px; height: 14px; line-height: 12px; text-align: center;
+            cursor: pointer; font-size: 10px;
+        }
+        /* Buttons */
+        .btn-main {
+            margin: 2px; padding: 8px; border: 2px solid;
+            border-color: #fff #444 #444 #fff;
+            cursor: pointer; font-family: 'Tahoma', sans-serif;
+            font-size: 14px; outline: none;
+        }
+        .btn-main:active { border-color: #444 #fff #fff #444; }
+        .savior-btn { background: #ff0000; color: white; font-weight: bold; text-decoration: underline; }
+
+        /* The Tighter Grid */
+        .grid-container {
+            display: grid; 
+            grid-template-columns: repeat(10, 20px); 
+            grid-template-rows: repeat(10, 20px);
+            gap: 0px; /* Tighter layout */
+            padding: 5px;
+            background: #888;
+            margin: 0 auto;
+        }
+        .grid-pixel {
+            width: 20px; height: 20px; 
+            background: #eee; border: 1px solid #bbb;
+            box-sizing: border-box;
+        }
+        .grid-pixel:hover { background: #fff; }
+        .grid-pixel.disabled { 
+            background: #555 !important; 
+            border: 1px solid #333;
+            pointer-events: none; 
+        }
+    </style>
+</head>
+<body>
+
+<script>
+    function spawnWindow() {
+        const win = document.createElement('div');
+        win.className = 'window';
+        
+        let state = { locked: false };
+        let dx = (Math.random() < 0.5 ? 2.5 : -2.5);
+        let dy = (Math.random() < 0.5 ? 2.5 : -2.5);
+        let x = Math.random() * (window.innerWidth - 250);
+        let y = Math.random() * (window.innerHeight - 200);
+
+        win.innerHTML = `
+            <div class="title-bar">
+                <span>Task Error</span>
+                <div class="close-x">X</div>
+            </div>
+            <button class="btn-main dup-btn">Duplicate</button>
+            <button class="btn-main savior-btn">DANGER</button>
+        `;
+
+        document.body.appendChild(win);
+
+        // Movement Loop
+        function animate() {
+            if (!state.locked && win.parentElement) {
+                x += dx; y += dy;
+                if (x + win.offsetWidth >= window.innerWidth || x <= 0) dx *= -1;
+                if (y + win.offsetHeight >= window.innerHeight || y <= 0) dy *= -1;
+                win.style.left = x + 'px';
+                win.style.top = y + 'px';
+                requestAnimationFrame(animate);
+            }
+        }
+        requestAnimationFrame(animate);
+
+        // Logic: Duplicate on 'X'
+        win.querySelector('.close-x').onclick = () => {
+            win.remove();
+            spawnWindow();
+            spawnWindow();
+        };
+
+        // Logic: Duplicate on Button
+        win.querySelector('.dup-btn').onclick = () => spawnWindow();
+
+        // Logic: Savior Grid
+        win.querySelector('.savior-btn').onclick = function() {
+            state.locked = true; // Stop movement
+            this.remove(); 
+            win.querySelector('.dup-btn').remove();
+            
+            const grid = document.createElement('div');
+            grid.className = 'grid-container';
+            let remaining = 100;
+
+            for (let i = 0; i < 100; i++) {
+                const pixel = document.createElement('div');
+                pixel.className = 'grid-pixel';
+                // Use 'mousedown' for faster response than 'click'
+                pixel.onmousedown = () => {
+                    if (!pixel.classList.contains('disabled')) {
+                        pixel.classList.add('disabled');
+                        remaining--;
+                        if (remaining <= 0) win.remove();
+                    }
+                };
+                grid.appendChild(pixel);
+            }
+            win.appendChild(grid);
+            
+            // Short delay before resuming drift (prevents user from losing the window immediately)
+            setTimeout(() => { state.locked = false; animate(); }, 800);
+        };
+    }
+
+    // Start
+    spawnWindow();
+
+    // Emergency Exit (Shift + Escape)
+    window.addEventListener('keydown', (e) => {
+        if (e.shiftKey && e.key === 'Escape') {
+            document.querySelectorAll('.window').forEach(w => w.remove());
+        }
+    });
+</script>
+</body>
+</html>
